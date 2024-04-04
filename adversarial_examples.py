@@ -1,3 +1,4 @@
+# %%
 import os
 import sys
 import torch
@@ -36,7 +37,7 @@ loaded_object = torch.load(sae_path)
 
 cfg = loaded_object['cfg']
 
-cfg.max_batch_size_for_vit_forward_pass = 1
+cfg.ma
 
 state_dict = loaded_object['state_dict']
 
@@ -47,18 +48,6 @@ sparse_autoencoder.load_state_dict(state_dict)
 sparse_autoencoder.eval()
 
 print(sparse_autoencoder)
-
-loader = ViTSparseAutoencoderSessionloader(cfg)
-
-model = loader.get_model(cfg.model_name)
-
-model.to(cfg.device)
-
-get_feature_data(
-    sparse_autoencoder,
-    model,
-    list(range(cfg.d_sae)),
-    number_of_images = 10,
-)
-
-
+# %%
+cfg
+# %%

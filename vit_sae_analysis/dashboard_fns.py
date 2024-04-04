@@ -2,6 +2,7 @@ import gzip
 import json
 import os
 import pickle
+import shutil
 import time
 from collections import defaultdict
 from dataclasses import dataclass
@@ -13,26 +14,26 @@ import einops
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchvision.transforms as transforms
 from datasets import load_dataset
-from tqdm import trange
 from eindex import eindex
 from IPython.display import HTML, display
 from jaxtyping import Float, Int
+from PIL import Image
 from rich import print as rprint
 from rich.table import Table
 from torch import Tensor, topk
-from torchvision import transforms, datasets
+from torchvision import datasets, transforms
 from torchvision.utils import save_image
-from tqdm import tqdm
+from tqdm import tqdm, trange
 from transformer_lens import utils
 from transformer_lens.hook_points import HookPoint
-from sae_training.hooked_vit import HookedVisionTransformer, Hook
-from sae_training.sparse_autoencoder import SparseAutoencoder
+
 from sae_training.config import ViTSAERunnerConfig
+from sae_training.hooked_vit import Hook, HookedVisionTransformer
+from sae_training.sparse_autoencoder import SparseAutoencoder
 from sae_training.vit_activations_store import ViTActivationsStore
-import torchvision.transforms as transforms
-from PIL import Image
-import shutil
+
 
 def load_images_and_convert_to_tensors(directory_path, device='cuda'):
     images_tensors = []
@@ -207,7 +208,7 @@ def get_feature_data(
     sparse_autoencoder: SparseAutoencoder,
     model: HookedVisionTransformer,
     feature_idx: List[int],
-    number_of_images: int = 32_768,
+    number_of_images: int = 10,
     number_of_max_activating_images: int = 10,
     max_number_of_images_per_iteration: int = 16_384,
 ) -> Dict[int, FeatureData]:
@@ -240,7 +241,7 @@ def get_feature_data(
     
     text_encoding = None
     
-    dataset = load_dataset(sparse_autoencoder.cfg.dataset_path, split="train")
+    dataset = load_dataset(sparse_autoencoder.cfg.dataset_path, split="train", cache_dir="/storage2/projects/madvex/datasets/imagenet-resized")
     
     if sparse_autoencoder.cfg.dataset_path=="cifar100": # Need to put this in the cfg
         image_key = 'img'
@@ -252,10 +253,12 @@ def get_feature_data(
     
     number_of_images_processed = 0
     all_images_processed=False
+    print(number_of_images)
     while number_of_images_processed < number_of_images:
         torch.cuda.empty_cache()
         images = []
-        for image in trange(max_number_of_images_per_iteration, desc = "Getting images for dashboard"):
+        print(number_of_images)
+        for image in trange(number_of_images, desc = "Getting images for dashboard"):
             with torch.no_grad():
                 try:
                     images.append(next(iterable_dataset)[image_key])
